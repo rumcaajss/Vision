@@ -25,8 +25,8 @@ public:
 };
 
 
-Mat pattern = imread("/home/andrzej/Desktop/rumcajs2.png", CV_LOAD_IMAGE_COLOR);
-Mat patternGray = imread("/home/andrzej/Desktop/rumcajs2.png", CV_LOAD_IMAGE_GRAYSCALE);
+Mat pattern = imread("/home/andrzej/Desktop/vis/7_1.jpg", CV_LOAD_IMAGE_COLOR);
+Mat patternGray = imread("/home/andrzej/Desktop/vis/7_1.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 Mat patternBlurred, patternThresh, readyToFind;
 
 int main(){
@@ -81,7 +81,7 @@ int main(){
 	char b='2';
 
 	
-		cout<<"kontury:"<<contours.size()<<endl;
+	cout<<"kontury:"<<contours.size()<<endl;
 	vector<Moments> mu(contours.size());
 	for(int i = 0;i<contours.size(); i++){
 		mu[i] = moments(contours[i],false);
@@ -94,13 +94,14 @@ int main(){
 	}
 	
 	kontur tab[contours.size()];
-	uchar* p = dupafinal.data;
-
+	//uchar* p = dupafinal.data;
+	
 	for (int a =0; a<contours.size(); a++){
 		windowName +=b;
 		namedWindow(windowName, CV_WINDOW_AUTOSIZE);
-		Mat tempWindow = Mat::zeros(patternGray.size(),CV_8UC3);
+		Mat tempWindow(dupafinal.size(),CV_8UC3, Scalar(0));
 		drawContours(tempWindow, contours,a,color,2,8,hierarchy, 0,Point());
+		uchar* p = tempWindow.data;
 		tab[a].centroidX = mc[a].x;
 		tab[a].centroidY = mc[a].y;
 		tab[a].LmostX=-1;
@@ -111,10 +112,13 @@ int main(){
 		tab[a].TmostY=-1;
 		tab[a].BmostX=-1;
 		tab[a].BmostY=-1;
+	
 		for (int i = 0; i<tempWindow.rows; i++){
 			for (int j = 0; j<tempWindow.cols; j++){
+				//uchar* p = tempWindow.data;
 				p = tempWindow.data + tempWindow.cols*i+j;
-				if (*p==255){
+				Vec3b zxc = tempWindow.at<Vec3b>(i,j);
+				if (zxc.val[1]==255){
 					if (tab[a].TmostY == -1)
 						tab[a].TmostY = i;
 					if (tab[a].TmostX == -1)
@@ -124,11 +128,16 @@ int main(){
 				}
 			}
 		}
+		cout<<"rows"<<tempWindow.rows<<endl;
+		cout<<"cols"<<tempWindow.cols<<endl;
 
 		for (int i = 0; i<tempWindow.cols; i++){
-			for (int j = 0; j<tempWindow.rows; j++){
+			for (int j =0; j<tempWindow.rows; j++){
+
+				//uchar* p = tempWindow.data;
 				p = tempWindow.data + tempWindow.cols*j+i;
-				if (*p==255){
+				Vec3b zxc = tempWindow.at<Vec3b>(j,i);
+				if (zxc.val[1]==255){
 					if (tab[a].LmostX == -1)
 						tab[a].LmostX = i;
 					if (tab[a].LmostY == -1)
@@ -138,16 +147,19 @@ int main(){
 				}
 			}
 		}
-		
-	circle( tempWindow, Point(tab[1].BmostX, tab[1].BmostY), 5, Scalar(255,255,255), 3, 8, 0 );
-	circle( tempWindow, Point(tab[1].TmostX, tab[1].TmostY), 5, Scalar(255,255,255), 3, 8, 0 );
-	circle( tempWindow, Point(tab[1].RmostX, tab[1].RmostY), 5, Scalar(255,255,255), 3, 8, 0 );
-	circle( tempWindow, Point(tab[1].LmostX, tab[1].LmostY), 5, Scalar(255,255,255), 3, 8, 0 );
+			
+	circle( tempWindow, Point(tab[a].BmostX, tab[a].BmostY), 5, Scalar(200,200,200), 3, 8, 0 );
+	circle( tempWindow, Point(tab[a].TmostX, tab[a].TmostY), 5, Scalar(200,200,200), 3, 8, 0 );
+	circle( tempWindow, Point(tab[a].RmostX, tab[a].RmostY), 5, Scalar(200,200,200), 3, 8, 0 );
+	circle( tempWindow, Point(tab[a].LmostX, tab[a].LmostY), 5, Scalar(200,200,200), 3, 8, 0 );
+	
 	imshow(windowName, tempWindow);
-	//Vec3b p=tempWindow.at<Vec3b>(tab[1].LmostX,tab[1].RmostY);
-	//cout<<int(p.val[0])<<endl;
+	//tempWindow.release();
+	
 	}
 	imshow("Window", dupafinal);
 	waitKey(0);
 	return 0;
 }
+//Vec3b p=tempWindow.at<Vec3b>(tab[1].LmostX,tab[1].RmostY);
+//cout<<int(p.val[0])<<endl;
