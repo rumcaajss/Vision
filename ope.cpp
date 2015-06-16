@@ -146,17 +146,17 @@ int main(){
 					}
 				}
 			}
-
-			circle( pattern, Point(asd.BmostX, asd.BmostY), 5, Scalar(200,200,200), 3, 8, 0 );
-			circle( pattern, Point(asd.TmostX, asd.TmostY), 5, Scalar(200,200,200), 3, 8, 0 );
-			circle( pattern, Point(asd.RmostX, asd.RmostY), 5, Scalar(200,200,200), 3, 8, 0 );
-			circle( pattern, Point(asd.LmostX, asd.LmostY), 5, Scalar(200,200,200), 3, 8, 0 );
+			cout<<asd.LmostY<<endl<<asd.LmostX<<endl;
+			circle( pattern, Point(asd.BmostX, asd.BmostY), 5, Scalar(255,0,0), 3, 8, 0 );
+			circle( pattern, Point(asd.TmostX, asd.TmostY), 5, Scalar(0,255,0), 3, 8, 0 );
+			circle( pattern, Point(asd.RmostX, asd.RmostY), 5, Scalar(0,0,255), 3, 8, 0 );
+			circle( pattern, Point(asd.LmostX, asd.LmostY), 5, Scalar(255,255,2), 3, 8, 0 );
 			circle( pattern, Point(asd.centroidX, asd.centroidY), 5, Scalar(200, 200, 200), 3, 8, 0);
 			Point2f pt = Point (asd.LmostX, asd.LmostY);
 			asd.corners.push_back(pt);
-			pt = Point (asd.RmostX, asd.RmostY);
-			asd.corners.push_back(pt);
 			pt = Point (asd.TmostX, asd.TmostY);
+			asd.corners.push_back(pt);
+			pt = Point (asd.RmostX, asd.RmostY);
 			asd.corners.push_back(pt);
 			pt = Point (asd.BmostX, asd.BmostY);
 			asd.corners.push_back(pt);
@@ -172,7 +172,7 @@ int main(){
 			}
 
 			Mat dst = pattern.clone();
-			Mat quad = Mat::zeros(300, 220, CV_8UC3);
+			Mat quad = Mat::zeros(320, 320, CV_8UC3);
 			vector<Point2f> quad_pts;
 			quad_pts.push_back(Point2f(0, 0));
 			quad_pts.push_back(Point2f(quad.cols, 0));
@@ -182,8 +182,16 @@ int main(){
 			warpPerspective(pattern, quad, transmtx, quad.size());
 			imshow("image", dst);
 			imshow("quadrilateral", quad);
-	
-
+			Mat test;
+			vector<Vec3f> circles;
+			Canny(quad, test, 50, 200, 3 );
+			imshow("canny", test);
+			HoughCircles( test, circles, CV_HOUGH_GRADIENT, 1,50, 200, 5, 5, 30 );
+			cout<< "size of array"<<circles.size()<<endl;
+			/*for( size_t i = 0; i < circles.size(); i++ ){ 
+		    	Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+				circle( test, center, 30, Scalar(0,255,0),  3, 8, 0);
+			}*/
 		}
 
 	}
