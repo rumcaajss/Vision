@@ -6,12 +6,19 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <sstream>
 
 using namespace cv;
 using namespace std;
 Point2f center(0,0);
-void sortCorners(vector<Point2f> corners, 
-                 Point2f center)
+template <typename T>
+string NumberToString (T Number)
+  {
+     ostringstream ss;
+     ss << Number;
+     return ss.str();
+  }
+void sortCorners(vector<Point2f> corners, Point2f center)
 {
 	vector<Point2f> top, bot;
 
@@ -37,6 +44,83 @@ void sortCorners(vector<Point2f> corners,
 		corners.push_back(bl);
 	}
 }
+int GetValue(Mat img){
+
+	float height = 320;
+	float width = 320;
+	float h4 = height/4;
+	float w4 = width/4;
+
+
+
+	Point characteristicPoints[8];
+	Point valuesPoints[8];
+	int pointValues[8][3];
+	int segmentValues[8];
+	
+	int whichSegment;
+	Vec3b point;
+	int codedValue = 0;
+
+	characteristicPoints[0].x = width/2;
+	characteristicPoints[0].y = height/2-h4;
+	
+	characteristicPoints[1].x = width/2+w4;
+	characteristicPoints[1].y = height/2-h4;
+
+	characteristicPoints[2].x = width/2+w4;
+	characteristicPoints[2].y = height/2;
+	
+	characteristicPoints[3].x = width/2+w4;
+	characteristicPoints[3].y = height/2+h4;
+	
+	characteristicPoints[4].x = width/2;
+	characteristicPoints[4].y = height/2+h4;
+	
+	characteristicPoints[5].x = width/2-w4;
+	characteristicPoints[5].y = height/2+h4;
+	
+	characteristicPoints[6].x = width/2-w4;
+	characteristicPoints[6].y = height/2;
+	
+	characteristicPoints[7].x = width/2-w4;
+	characteristicPoints[7].y = height/2-h4;
+
+	for (int i=0; i<8; i++){
+		point = img.at<Vec3b>(characteristicPoints[i]);
+		if (int(point.val[2]) > 180 && int(point.val[1])<100)
+			whichSegment = i;
+	}
+
+	for (int i=0; i<8; i++){
+		valuesPoints[i] = characteristicPoints[(i+whichSegment)%8];
+		point = img.at<Vec3b>(valuesPoints[i]);
+	}
+
+	for (int i=0; i<8; i++){
+		point = img.at<Vec3b>(valuesPoints[i]);
+		pointValues[i][0] = int(point.val[0]);
+		pointValues[i][1] = int(point.val[1]);
+		pointValues[i][2] = int(point.val[2]);
+	}
+	
+	//check color/value of the center
+	point = img.at<Vec3b>(width/2, height/2);
+	if (int(point.val[1] > 120))
+		codedValue +=1;
+
+	for (int i = 1; i<8; i++){
+		if (pointValues[i][0]>150){
+			segmentValues[i]=1;
+			codedValue += pow(2, i);
+		}
+		else
+			segmentValues[i]=0;
+	}
+	cout<<endl<<"The coded value is:"<<codedValue<<endl;
+	
+	return codedValue;
+}
 
 class kontur{
 public:
@@ -55,7 +139,7 @@ public:
 };
 
 
-String path = "/home/andrzej/Desktop/vis/11_1.jpg";
+String path = "/home/andrzej/Desktop/vis/7_1.jpg";
 Mat pattern = imread(path, CV_LOAD_IMAGE_COLOR);
 Mat patternGray = imread(path, CV_LOAD_IMAGE_GRAYSCALE);
 Mat patternThresh, drawing1Gray, drawing1Thresh;
@@ -87,8 +171,10 @@ int main(){
 	//kontur tab[contours.size()];
 	String name = "Window #";
 	char c = '2';
+	String quadr = "quadrilateral #";
+	char d = '1';
 	String windowName;
-	//cout<<contours.size()<<endl;
+	String windowNameQuadr;
 	for (int a =0; a<contours.size(); a++){
 		kontur asd;
 		Scalar color = Scalar(0,255,0);
@@ -131,7 +217,6 @@ int main(){
 					}
 				}
 			}
-
 			for (int i = 0; i<tempWindow.cols; i++){
 				for (int j =0; j<tempWindow.rows; j++){
 					p = tempWindow.data + tempWindow.cols*j+i;
@@ -163,14 +248,13 @@ int main(){
 			imshow(windowName, tempWindow);	
 
 			cout<<asd.area<<endl;
-			//cout<<asd.corners.size()<<endl;
 			sortCorners(asd.corners, center);
 			if (asd.corners.size() == 0){
 				cout << "The corners were not sorted correctly!" << endl;
 				return -1;
 
 			}
-
+			windowNameQuadr = quadr + d;
 			Mat dst = pattern.clone();
 			Mat quad = Mat::zeros(320, 320, CV_8UC3);
 			vector<Point2f> quad_pts;
@@ -181,25 +265,17 @@ int main(){
 			Mat transmtx = getPerspectiveTransform(asd.corners, quad_pts);
 			warpPerspective(pattern, quad, transmtx, quad.size());
 			imshow("image", dst);
-			imshow("quadrilateral", quad);
-			Mat test;
-			vector<Vec3f> circles;
-			Canny(quad, test, 50, 200, 3 );
-			imshow("canny", test);
-			HoughCircles( test, circles, CV_HOUGH_GRADIENT, 1,50, 200, 5, 5, 30 );
-			cout<< "size of array"<<circles.size()<<endl;
-			/*for( size_t i = 0; i < circles.size(); i++ ){ 
-		    	Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-				circle( test, center, 30, Scalar(0,255,0),  3, 8, 0);
-			}*/
+			int value  = GetValue(quad);
+			string s=NumberToString(value);
+			//cout<<s<<"value"<<endl;
+			putText( quad, s, Point(160,160), FONT_HERSHEY_SIMPLEX, 1, color, 2,1);
+			imshow(windowNameQuadr, quad);
+			d++;
 		}
 
+
 	}
-
-	
 	imshow("Window", patternThresh);
-
-
 	waitKey(0);
 	return 0;
 }
