@@ -117,7 +117,6 @@ int GetValue(Mat img){
 			segmentValues[i]=0;
 	}
 	cout<<endl<<"The coded value is:"<<codedValue<<endl;
-	//imshow("threshold", img);
 	return codedValue;
 }
 
@@ -137,16 +136,16 @@ public:
 	vector <Point2f> corners;
 };
 
-String path = "/home/andrzej/Desktop/vis/12_1.jpg";
+String path = "/home/andrzej/Desktop/vis/6templ_1.jpg";
 Mat pattern = imread(path, CV_LOAD_IMAGE_COLOR);
 Mat patternGray = imread(path, CV_LOAD_IMAGE_GRAYSCALE);
-Mat patternThresh, drawing1Gray, drawing1Thresh, threshQuad, quadGray, patternBlurred, filtered;
+Mat patternThresh, threshQuad, quadGray, patternBlurred, filtered;
 
 int main(){
 	Mat kernel = getStructuringElement( MORPH_RECT, Size( 4, 4 ));
 	morphologyEx( patternGray, filtered, 0, kernel );
-	GaussianBlur( filtered, filtered, Size(5,5), 0 );
-	threshold(filtered, patternThresh, 130, 255,0);
+	GaussianBlur( filtered, filtered, Size(7,7), 0 );
+	threshold(filtered, patternThresh, 120, 255,0);
 	imshow("blur", filtered);
 	imshow("not-blur", patternGray);
 	vector<Vec3f> circles;
@@ -159,21 +158,11 @@ int main(){
 		drawContours(drawing1, contours,i,Scalar(0, 255, 0),1,8,hierarchy, 0,Point());
 	}
 	imshow("show", drawing1);
-	
-	cout<<contours.size()<<endl;
-	cvtColor(drawing1, drawing1Gray, CV_RGB2GRAY);
-	threshold(drawing1Gray, drawing1Thresh, 100, 255,0);		
-	//findContours(drawing1Thresh,contours,hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-	
-	Mat drawing2 = Mat::zeros(patternGray.size(),CV_8UC3);
-	
 	vector<Moments> mu(contours.size());
 	vector<Point2f> mc(contours.size());
 
 	vector<kontur> tab;
 
-	String name = "Window #";
-	char c = '2';
 	String quadr = "quadrilateral #";
 	char d = '1';
 	String windowName;
@@ -181,42 +170,40 @@ int main(){
 	Mat dst = pattern.clone();
 	cout<<contours.size()<<endl;
 	for (int a =0; a<contours.size(); a++){
-		kontur asd;
+		kontur contur;
 		Scalar color = Scalar(0,255,0);
 
 		mu[a] = moments(contours[a],false);
 		mc[a] = Point2f(mu[a].m10/mu[a].m00, mu[a].m01/mu[a].m00);
 		
-		asd.centroidX = mc[a].x;
-		asd.centroidY = mc[a].y;
-		asd.area = contourArea(contours[a]);
-		asd.LmostX=-1;
-		asd.LmostY=-1;
-		asd.RmostX=-1;
-		asd.RmostY=-1;
-		asd.TmostX=-1;
-		asd.TmostY=-1;
-		asd.BmostX=-1;
-		asd.BmostY=-1;
-		//if (asd.area > 6000){
-			windowName = name + c;
-			c++;
+		contur.centroidX = mc[a].x;
+		contur.centroidY = mc[a].y;
+		contur.area = contourArea(contours[a]);
+		contur.LmostX=-1;
+		contur.LmostY=-1;
+		contur.RmostX=-1;
+		contur.RmostY=-1;
+		contur.TmostX=-1;
+		contur.TmostY=-1;
+		contur.BmostX=-1;
+		contur.BmostY=-1;
+		//if (contur.area > 3000 && contur.area <10000){
 
 			Mat tempWindow(pattern.size(),CV_8UC3, Scalar(0));
 			drawContours(tempWindow, contours,a,Scalar(0, 255, 0),2,8,hierarchy, 0,Point());
 			uchar* p = tempWindow.data;
-			tab.push_back(asd);
+			tab.push_back(contur);
 			for (int i = 0; i<tempWindow.rows; ++i){
 				for (int j = 0; j<tempWindow.cols; ++j){
 					p = tempWindow.data + tempWindow.cols*i+j;
 					Vec3b zxc = tempWindow.at<Vec3b>(i,j);
 					if (zxc.val[1]==255){
-						if (asd.TmostY == -1)
-							asd.TmostY = i;
-						if (asd.TmostX == -1)
-							asd.TmostX = j;
-						asd.BmostX = j;
-						asd.BmostY = i;
+						if (contur.TmostY == -1)
+							contur.TmostY = i;
+						if (contur.TmostX == -1)
+							contur.TmostX = j;
+						contur.BmostX = j;
+						contur.BmostY = i;
 					}
 				}
 			}
@@ -225,40 +212,38 @@ int main(){
 					p = tempWindow.data + tempWindow.cols*j+i;
 					Vec3b zxc = tempWindow.at<Vec3b>(j,i);
 					if (zxc.val[1]==255){
-						if (asd.LmostX == -1)
-							asd.LmostX = i;
-						if (asd.LmostY == -1)
-							asd.LmostY = j;
-						asd.RmostX = i;
-						asd.RmostY = j;
+						if (contur.LmostX == -1)
+							contur.LmostX = i;
+						if (contur.LmostY == -1)
+							contur.LmostY = j;
+						contur.RmostX = i;
+						contur.RmostY = j;
 					}
 				}
 			}
 			
-			circle( pattern, Point(asd.BmostX, asd.BmostY), 5, Scalar(255,0,0), 3, 8, 0 );
-			circle( pattern, Point(asd.TmostX, asd.TmostY), 5, Scalar(0,255,0), 3, 8, 0 );
-			circle( pattern, Point(asd.RmostX, asd.RmostY), 5, Scalar(0,0,255), 3, 8, 0 );
-			circle( pattern, Point(asd.LmostX, asd.LmostY), 5, Scalar(255,255,2), 3, 8, 0 );
-			//imshow("asdsad", pattern);
-			Point2f pt = Point (asd.LmostX, asd.LmostY);
-			asd.corners.push_back(pt);
-			pt = Point (asd.TmostX, asd.TmostY);
-			asd.corners.push_back(pt);
-			pt = Point (asd.RmostX, asd.RmostY);
-			asd.corners.push_back(pt);
-			pt = Point (asd.BmostX, asd.BmostY);
-			asd.corners.push_back(pt);	
+			circle( pattern, Point(contur.BmostX, contur.BmostY), 5, Scalar(255,0,0), 3, 8, 0 );
+			circle( pattern, Point(contur.TmostX, contur.TmostY), 5, Scalar(0,255,0), 3, 8, 0 );
+			circle( pattern, Point(contur.RmostX, contur.RmostY), 5, Scalar(0,0,255), 3, 8, 0 );
+			circle( pattern, Point(contur.LmostX, contur.LmostY), 5, Scalar(255,255,2), 3, 8, 0 );
+			//imshow("contursad", pattern);
+			Point2f pt = Point (contur.LmostX, contur.LmostY);
+			contur.corners.push_back(pt);
+			pt = Point (contur.TmostX, contur.TmostY);
+			contur.corners.push_back(pt);
+			pt = Point (contur.RmostX, contur.RmostY);
+			contur.corners.push_back(pt);
+			pt = Point (contur.BmostX, contur.BmostY);
+			contur.corners.push_back(pt);	
 			//imshow(windowName, tempWindow);	
 
-			sortCorners(asd.corners, center);
-			if (asd.corners.size() == 0){
+			sortCorners(contur.corners, center);
+			if (contur.corners.size() == 0){
 				cout << "The corners were not sorted correctly!" << endl;
 				return -1;
-
 			}
 
 			windowNameQuadr = quadr + d;
-			//
 			imshow("pattern", pattern);
 			Mat quad = Mat::zeros(320, 320, CV_8UC3);
 			vector<Point2f> quad_pts;
@@ -266,17 +251,16 @@ int main(){
 			quad_pts.push_back(Point2f(quad.cols, 0));
 			quad_pts.push_back(Point2f(quad.cols, quad.rows));
 			quad_pts.push_back(Point2f(0, quad.rows));
-			Mat transmtx = getPerspectiveTransform(asd.corners, quad_pts);
+			Mat transmtx = getPerspectiveTransform(contur.corners, quad_pts);
 			warpPerspective(pattern, quad, transmtx, quad.size());
 			cvtColor(quad, quadGray, CV_RGB2GRAY);
 			threshold(quadGray, threshQuad, 120, 255,0);
 			HoughCircles( threshQuad, circles, CV_HOUGH_GRADIENT, 1,80, 255, 10, threshQuad.cols/2-5, threshQuad.cols/2+5);
-			//cout<<circles.size()<<"size"<<endl;
 			if (circles.size() > 0 && circles.size() < 15){
 				//imshow("image", dst);
 				int value  = GetValue(quad);
 				string s=NumberToString(value);
-				putText( dst, s, Point(asd.centroidX,asd.centroidY), FONT_HERSHEY_SIMPLEX, 1, color, 2,1);
+				putText( dst, s, Point(contur.centroidX,contur.centroidY), FONT_HERSHEY_SIMPLEX, 1, color, 2,1);
 				imshow(windowNameQuadr, quad);
 				imshow("image", dst);
 				d++;
