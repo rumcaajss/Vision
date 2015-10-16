@@ -27,7 +27,7 @@ class Counter():
 	minutes=0
 	hours=0
 	break_var=True
-	def __init__(self, start_time):
+	def __init__(self, start_time, *args):
 		self.start_time=start_time
 		self.total_time=time1+time2
 		self.temp_set=temperatura
@@ -47,6 +47,8 @@ class Counter():
 		elif self.minutes==self.total_time:
 			self.break_var=False
 			print self.break_var
+#d=Counter(5,8)
+
 class Start():
     def __init__(self, master, *args, **kwargs):
 		#__init__(self, *args, **kwargs)
@@ -115,6 +117,9 @@ class PageOne(Frame):
 		time2.selection_range(0, END)			
 		time2.bind("<Return>", self.SecondTime)
 
+		self.label6=Label(self, text="You can't proceed to mashing yet", fg="red")
+		self.label6.pack()
+
 		button1 = Button(self, text="Start preheating")
 		button1.bind("<Return>", self.PreheatDone)#lambda event: controller.show_frame(Mashing))
 		button1.pack()
@@ -137,6 +142,15 @@ class PageOne(Frame):
             "Preheating done, make sure the valves are in appropriate position\n Start the pump now?")
 		if result:
 			print result
+			self.PumpOff()
+	def PumpOff(self):
+		result=tkMessageBox.askokcancel(
+			"Pumping",
+			"Stop the pump?")
+		if result:
+			#pump relay on
+			print("pump stopped")
+			self.label6.configure(text="You may now proceed, remember to set valves to appropriate position", fg="green")
 	def PreheatOfHLT(self):
 		#HLT_Sensor=Sensor("addressss")
 		#measured=HLT_Sensor.temp_sensor("addressss")
@@ -267,15 +281,30 @@ class PageTwo(Frame):
 class Brewing(Frame):
 	def __init__(self, parent, controller):
 		Frame.__init__(self, parent)
+		self.StartTime=time.time()
 		label = Label(self, text="Brewing in progress...", font=LARGE_FONT)
 		label.pack(pady=10,padx=10)
 		brew_time_info=Label(self, text="Time of brewing: %d minutes" % brewing_time, font=LARGE_FONT)
 		brew_time_info.pack()
+		timer=Label(self, text="%d:%d:%d" %(0,0,0))
+		timer.pack()
 
 		exit = Button(self, text="Stop and back to Home")
 		exit.bind("<Return>", lambda event: controller.show_frame(StartPage))		
 		exit.pack()
 		exit.focus_force()
+		self.Control()
+		self.brew_time_control=Counter(self.StartTime)
+	def Control(self):
+		self.brew_time_control.count(self.StartTime)
+		self.timer.configure(text='%d:%d:%d' %(self.brew_time_control.hours, self.brew_time_control.minutes,self.brew_time_control.seconds))
+		self.after(1000,self.Control)
+
+
+
+
+
+
 root=Tk()
 root.geometry('600x300+300+300')
 #root.attributes('-fullscreen', True)    set to fullscreen
