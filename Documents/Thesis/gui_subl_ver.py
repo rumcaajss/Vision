@@ -26,12 +26,11 @@ class Counter():
 	seconds=0
 	minutes=0
 	hours=0
-	break_var=True
 	def __init__(self, start_time, *args):
 		self.start_time=start_time
-		self.total_time=time1+time2
+		#self.total_time=time1+time2
 		self.temp_set=temperatura
-		self.time_set=time1
+		#self.time_set=time1
 	def count(self, start_time):
 		self.refreshed_time=time.time()
 		self.seconds=round(float(self.refreshed_time-self.start_time))
@@ -42,18 +41,14 @@ class Counter():
 			if self.minutes==60:
 				self.minutes=0
 				self.hours=self.hours+1
-		if (self.minutes==self.time_set)&(self.time_set!=self.total_time):
-			self.temp_set=temperatura2
-		elif self.minutes==self.total_time:
-			self.break_var=False
-			print self.break_var
+		
 #d=Counter(5,8)
 
 class Start():
     def __init__(self, master, *args, **kwargs):
 		#__init__(self, *args, **kwargs)
 		self.container = Frame(master, width=600,height=600)
-		self.container.pack(side="top", fill="both", expand = False)
+		self.container.pack(side="top", fill="both", expand = True)
 		self.container.grid_rowconfigure(0, weight=1)
 		self.container.grid_columnconfigure(0, weight=1)
 		self.history = []
@@ -78,12 +73,13 @@ class StartPage(Frame):
 		button2.pack()
  
 class PageOne(Frame):
+	preheated=False
 	def __init__(self, parent, controller):
 		self.controller=controller
 		Frame.__init__(self, parent)
 		label = Label(self, text="Mashing", font=LARGE_FONT)
-		label.pack(pady=10,padx=10)
-		
+		#label.pack(pady=10,padx=10)
+		label.pack()
 		label2=Label(self, text="First rest temperature")
 		label2.pack()
 		self.temp_var = IntVar()
@@ -117,25 +113,26 @@ class PageOne(Frame):
 		time2.selection_range(0, END)			
 		time2.bind("<Return>", self.SecondTime)
 
-		self.label6=Label(self, text="You can't proceed to mashing yet", fg="red")
+		self.label6=Label(self, text="You can't proceed to mashing yet, preheat first", fg="red")
 		self.label6.pack()
 
-		button1 = Button(self, text="Start preheating")
-		button1.bind("<Return>", self.PreheatDone)#lambda event: controller.show_frame(Mashing))
-		button1.pack()
+		self.button1 = Button(self, text="Start preheating")
+		self.button1.bind("<Return>", self.PreheatDone)#lambda event: controller.show_frame(Mashing))
+		self.button1.pack()
 		
-		button3 = Button(self, text="Start mashing")
-		button3.bind("<Return>", lambda event: controller.show_frame(Mashing))
-		button3.pack()
-
 		button2 = Button(self, text="Back to Home")
 		button2.bind("<Return>",lambda event: controller.show_frame(StartPage))
 		button2.pack()
 	def PreheatInfo(self,event):
-		self.PreheatOfHLT()
-		tkMessageBox.showinfo(
-            "Preheating",
-            "Preheating in progress, please wait until proper information is displayed")
+		if self.preheated==False:
+			self.PreheatOfHLT()
+			tkMessageBox.showinfo(
+        	    "Preheating",
+        	    "Preheating in progress, please wait until proper information is displayed")
+		else:
+			tkMessageBox.showinfo(
+				"Preheating",
+				"The water is already preheated!")
 	def PreheatDone(self,event):
 		result=tkMessageBox.askyesno(
             "Preheating",
@@ -148,14 +145,19 @@ class PageOne(Frame):
 			"Pumping",
 			"Stop the pump?")
 		if result:
+			self.button1.configure(text="Start mashing")
+			self.button1.bind("<Return>", lambda event: self.controller.show_frame(Mashing))
 			#pump relay on
 			print("pump stopped")
-			self.label6.configure(text="You may now proceed, remember to set valves to appropriate position", fg="green")
+			self.preheated=True
+
+			self.label6.configure(text="You may now proceed, remember to set valves to appropriate position", fg="green", font=LARGE_FONT)
 	def PreheatOfHLT(self):
 		#HLT_Sensor=Sensor("addressss")
 		#measured=HLT_Sensor.temp_sensor("addressss")
 		pre_HLT_temp=temperatura+5
 		print pre_HLT_temp
+		self.PumpOff()
 		#if True:
 		#	self.PreheatOfBK()
 		#relays on, controller, if measured==pre_temp {start PreheatOfBK, break PreheatHLT)
@@ -196,9 +198,11 @@ class PageOne(Frame):
 		time2=time_var2
 		event.widget.tk_focusNext().focus() 
 
-class Mashing(Frame):	
+class Mashing(Frame):
+	break_var=True	
 	def __init__(self, parent, controller):
 		self.controller=controller
+		self.time_set=time1
 		self.total_time=time1+time2
 		self.StartTime=time.time()
 		Frame.__init__(self, parent)
@@ -223,30 +227,32 @@ class Mashing(Frame):
 		self.Control()
 
 	def Control(self):
-		self.time_control.count(self.StartTime)
-		#Mash_sensor=Sensor("28-0215021f66ff")	
-		
-
-		self.timer.configure(text='%d:%d:%d' %(self.time_control.hours, self.time_control.minutes,self.time_control.seconds))
-		
-		temp_meas=randint(0,100)#Mash_sensor.temp_sensor("28-0215021f66ff")
-		self.text.configure(text=temp_meas)       			#use random 
-		error = self.time_control.temp_set-temp_meas
-		print('temp set %d' %self.time_control.temp_set)
-		print('total_time %d' %self.time_control.total_time)
-		#if error < 10:
-		#	GPIO.output(23,GPIO.HIGH)
-		#else:  
-		#	GPIO.output(23,GPIO.LOW)
-		if self.time_control.break_var:
+		if self.break_var:
+			self.time_control.count(self.StartTime)
+			#Mash_sensor=Sensor("28-0215021f66ff")	
+			self.timer.configure(text='%d:%d:%d' %(self.time_control.hours, self.time_control.minutes,self.time_control.seconds))
+			temp_meas=randint(0,100)#Mash_sensor.temp_sensor("28-0215021f66ff")
+			self.text.configure(text=temp_meas)       			#use random 
+			error = self.time_control.temp_set-temp_meas
+			print('temp set %d' %self.time_control.temp_set)
+			print('total_time %d' %self.total_time)
+			#if error < 10:
+			#	GPIO.output(23,GPIO.HIGH)
+			#else:  
+			#	GPIO.output(23,GPIO.LOW)
 			self._timer=self.after(1000,self.Control)
-		print self.time_control.break_var
+			if (self.time_control.minutes==self.time_set)&(self.time_set!=self.total_time):
+				self.time_control.temp_set=temperatura2
+			elif self.time_control.minutes==self.total_time:
+				self.break_var=False
+				print self.break_var
 	def Stop(self, event):
-		if self.time_control.break_var:
-			self.time_control.break_var=False
-		self.controller.show_frame(StartPage)
-		print self.time_control.break_var 
-		
+		result=tkMessageBox.askyesno(
+			"Exit",
+			"Are you sure you want to exit?")
+		if result:
+			self.break_var=False
+			self.controller.show_frame(StartPage)
 		
 class PageTwo(Frame):
 	def __init__(self, parent, controller):
@@ -261,8 +267,6 @@ class PageTwo(Frame):
 		brew_time.focus_force()
 		brew_time.selection_range(0, END)
 		brew_time.bind("<Return>", self.BrewingTime)
-
-
 
 		button1 = Button(self, text="Start brewing")
 		button1.bind("<Return>", lambda event: controller.show_frame(Brewing))
@@ -279,26 +283,42 @@ class PageTwo(Frame):
 		print brewing_time 
 
 class Brewing(Frame):
+	break_var=True
 	def __init__(self, parent, controller):
+		self.controller=controller
 		Frame.__init__(self, parent)
 		self.StartTime=time.time()
-		label = Label(self, text="Brewing in progress...", font=LARGE_FONT)
-		label.pack(pady=10,padx=10)
+		self.time_set=brewing_time
+
+		self.label = Label(self, text="Brewing in progress...", font=LARGE_FONT)
+		self.label.pack(pady=10,padx=10)
 		brew_time_info=Label(self, text="Time of brewing: %d minutes" % brewing_time, font=LARGE_FONT)
 		brew_time_info.pack()
-		timer=Label(self, text="%d:%d:%d" %(0,0,0))
-		timer.pack()
+		self.timer=Label(self, text="%d:%d:%d" %(0,0,0))
+		self.timer.pack()
 
 		exit = Button(self, text="Stop and back to Home")
-		exit.bind("<Return>", lambda event: controller.show_frame(StartPage))		
+		exit.bind("<Return>", self.Stop)		
 		exit.pack()
 		exit.focus_force()
-		self.Control()
 		self.brew_time_control=Counter(self.StartTime)
+		self.Control()
 	def Control(self):
-		self.brew_time_control.count(self.StartTime)
-		self.timer.configure(text='%d:%d:%d' %(self.brew_time_control.hours, self.brew_time_control.minutes,self.brew_time_control.seconds))
-		self.after(1000,self.Control)
+		if self.break_var:
+			self.brew_time_control.count(self.StartTime)
+			self.timer.configure(text='%d:%d:%d' %(self.brew_time_control.hours, self.brew_time_control.minutes,self.brew_time_control.seconds))
+			self._timer=self.after(1000,self.Control)
+			if self.brew_time_control.minutes==self.time_set:
+				self.break_var=False
+				self.label.configure(text="Done! :)", fg="green")
+				print self.break_var
+	def Stop(self,event):
+		result=tkMessageBox.askyesno(
+			"Exit",
+			"Are you sure you want to exit?")
+		if result:
+			self.break_var=False
+			self.controller.show_frame(StartPage)
 
 
 
